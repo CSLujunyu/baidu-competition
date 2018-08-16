@@ -30,9 +30,9 @@ def train(conf, _model):
     conf["save_step"] = int(max(1, train_batch_num /10))
     conf["print_step"] = int(max(1, train_batch_num / 100))
 
-    print('build graph:', time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+    print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())),' : Build graph')
     _graph = _model.build_graph()
-    print('build graph sucess:', time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+    print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())), ' : Build graph sucess')
 
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allow_growth = True
@@ -50,7 +50,7 @@ def train(conf, _model):
 
         for step_i in range(conf["num_scan_data"]):
             for batch_index in range(train_batch_num):
-                example_id, turns, turn_num, turn_len, response, response_len, label = dg.train_data_generator(batch_index)
+                turns, turn_num, turn_len, response, response_len, label = dg.train_data_generator(batch_index)
                 feed = {
                     _model.turns: turns,
                     _model.turn_num: turn_num,
@@ -79,11 +79,11 @@ def train(conf, _model):
                     index = step / conf['save_step']
                     dev_score_file_path = conf['save_path'] + 'dev_score.' + str(index)
                     dev_score_file = open(dev_score_file_path, 'w')
-                    print('save step: %s' %index, time.strftime(' %Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+                    print(time.strftime(' %Y-%m-%d %H:%M:%S',time.localtime(time.time())), '  Save step: %s' %index)
 
                     # caculate dev score
                     for batch_index in range(val_batch_num):
-                        example_id, turns, turn_num, turn_len, response, response_len, label = dg.dev_data_generator(
+                        turns, turn_num, turn_len, response, response_len, label = dg.dev_data_generator(
                             batch_index)
                         feed = {
                             _model.turns: turns,
@@ -98,7 +98,7 @@ def train(conf, _model):
 
                         for i in range(conf["batch_size"]):
                             for j in range(conf['options_num']):
-                                if j == 0:
+                                if j == label[i]:
                                     lab = 1
                                 else:
                                     lab = 0

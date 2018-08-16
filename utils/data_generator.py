@@ -1,8 +1,4 @@
 import numpy as np
-import pandas as pd
-import gensim
-from nltk.corpus import stopwords
-import string
 import pickle
 import os
 import time
@@ -11,13 +7,13 @@ class DataGenerator():
     def __init__(self, configs):
         self.configs = configs
         self.train_context, self.train_respone, self.train_label = self.load_train_data()
-        print('Finish Loading Training Data: ', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Training Data')
 
         self.dev_context, self.dev_respone, self.dev_label = self.load_dev_data()
-        print('Finish Loading Dev Data:', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Dev Data')
 
         self.table = self.table_generator()
-        print('Finish Loading Table:', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Table')
 
         self.train_data_size = len(self.train_label)
         self.dev_data_size = len(self.dev_label)
@@ -31,10 +27,10 @@ class DataGenerator():
 
         # shuffle data at the beginning of every epoch
         if batch_num == 0:
-            self.train_context, self.train_respone, self.train_label = self.unison_shuffled_copies(self.train_context,
+            self.train_context, self.train_respone, self.train_label, _ = self.unison_shuffled_copies(self.train_context,
                                                                                                self.train_respone,
                                                                                                self.train_label)
-            print('Finish Shuffling Data:', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+            print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Shuffling Data:')
 
         if start < end:
             batches_label = self.train_label[start:end]
@@ -45,9 +41,9 @@ class DataGenerator():
             batches_context = self.train_context[train_size - self.configs['batch_size']:train_size]
             batches_response = self.train_respone[train_size - self.configs['batch_size']:train_size]
 
-        example_id, turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context, batches_response, batches_label)
+        turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context, batches_response, batches_label)
 
-        return example_id, turns, turn_num, turn_len, response, response_len, label
+        return turns, turn_num, turn_len, response, response_len, label
 
     def dev_data_generator(self, batch_num):
         """
@@ -64,15 +60,15 @@ class DataGenerator():
             batches_context = self.dev_context[start:end]
             batches_response = self.dev_respone[start:end]
         else:
-            batches_label = self.dev_label[dev_size - self.configs['batch_size']:dev_size]
-            batches_context = self.dev_context[dev_size - self.configs['batch_size']:dev_size]
-            batches_response = self.dev_respone[dev_size - self.configs['batch_size']:dev_size]
+            batches_label = self.dev_label[start:]
+            batches_context = self.dev_context[start:]
+            batches_response = self.dev_respone[start:]
 
-        example_id, turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context,
-                                                                                                      batches_response,
-                                                                                                      batches_label)
+        turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context,
+                                                                                          batches_response,
+                                                                                          batches_label)
 
-        return example_id, turns, turn_num, turn_len, response, response_len, label
+        return turns, turn_num, turn_len, response, response_len, label
 
 
     def table_generator(self):
@@ -89,22 +85,42 @@ class DataGenerator():
     def batch2placeholder(self, batches_context, batches_response, batches_label):
 
         tmp = list(zip(*batches_context))
-        example_id, turns, turn_num, turn_len = tmp[0], tmp[1], tmp[2], tmp[3]
+        example_id_c, turns, turn_num, turn_len = tmp[0], tmp[1], tmp[2], tmp[3]
 
         tmp = list(zip(*batches_response))
-        example_id, response, response_len = tmp[0], tmp[1], tmp[2]
+        example_id_r, response, response_len = tmp[0], tmp[1], tmp[2]
 
         tmp = list(zip(*batches_label))
-        example_id, label = tmp[0], tmp[1]
+        example_id_y, label = tmp[0], tmp[1]
 
+        assert example_id_c == example_id_r == example_id_y
 
-        return example_id, turns, turn_num, turn_len, response, response_len, label
+        # shuffle respone order in one example
+        response, response_len, label = self.shuffle_response(response, response_len, label)
+
+        return turns, turn_num, turn_len, response, response_len, label
 
     def unison_shuffled_copies(self, a, b, c):
         assert len(a) == len(b) == len(c)
         p = np.random.permutation(len(a))
-        return a[p], b[p], c[p]
+        return a[p], b[p], c[p], p
 
+    def shuffle_response(self,response, response_len, label):
+        """
+        responses contain ground truth id
+        :param response: (batch_size, options_num, max_turn_len)
+        :param response_len: (batch_size, options_num)
+        :param label: (batch_size)
+        :return:
+        """
+        tmp_response = np.zeros_like(response)
+        tmp_response_len = np.zeros_like(response_len)
+        tmp_label = np.zeros_like(label)
+        for i in range(len(response)):
+            tmp_response[i], tmp_response_len[i], _, shuffle_id = self.unison_shuffled_copies(np.array(response[i]), np.array(response_len[i]), np.array(response_len[i]))
+            tmp_label[i] = np.argwhere(shuffle_id == label[i])
+
+        return tmp_response, tmp_response_len, tmp_label
 
 
     def get_context(self, context):

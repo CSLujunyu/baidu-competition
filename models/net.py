@@ -1,10 +1,13 @@
 import tensorflow as tf
 from models.dual_encoder import dual_encoder_model
+from models.dual_encoder_cnn import dual_encoder_CNN_model
+from models.dual_encoder_attention import dual_encoder_Attention_model
 
 class Net(object):
     def __init__(self, conf):
         self._graph = tf.Graph()
         self._conf = conf
+        self.Model = dual_encoder_Attention_model
 
 
     def build_graph(self):
@@ -42,8 +45,7 @@ class Net(object):
 
             self.table = tf.placeholder(
                 tf.float32,
-                shape=[self._conf['vocab_size'], self._conf['emb_size']]
-            )
+                shape=[self._conf['vocab_size'], self._conf['emb_size']])
 
             # convert table to variable
             self.table_v = tf.Variable(self.table, name='table')
@@ -54,7 +56,7 @@ class Net(object):
             self.response_embed = tf.nn.embedding_lookup(self.table_v, self.response)
 
             # Dual encoder model
-            self.probs, self.de_logits = dual_encoder_model(self._conf, self.turns_embed, self.turn_len, self.response_embed, self.response_len)
+            self.probs, self.de_logits = self.Model(self._conf, self.turns_embed, self.turn_len, self.response_embed, self.response_len)
 
             # Calculate cross-entropy loss
             self.de_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.de_logits, labels=self.label), name='de_loss')
