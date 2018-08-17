@@ -14,7 +14,7 @@ def similarity(x, y, x_lengths, y_lengths):
         ValueError: if
             the dimenisons of x and y are not equal.
     '''
-    with tf.variable_scope('x_attend_y'):
+    with tf.variable_scope('x_attend_y',reuse=tf.AUTO_REUSE):
         try:
             x_a_y = block(
                 x, y, y,
@@ -25,7 +25,7 @@ def similarity(x, y, x_lengths, y_lengths):
                 x, y, y,
                 Q_lengths=x_lengths, K_lengths=y_lengths)
 
-    with tf.variable_scope('y_attend_x'):
+    with tf.variable_scope('y_attend_x',reuse=tf.AUTO_REUSE):
         try:
             y_a_x = block(
                 y, x, x,
@@ -161,10 +161,10 @@ def FFN(x, out_dimension_0=None, out_dimension_1=None):
 
     Raises:
     '''
-    with tf.variable_scope('FFN_1'):
+    with tf.variable_scope('FFN_1',reuse=tf.AUTO_REUSE):
         y = op.dense(x, out_dimension_0)
         y = tf.nn.relu(y)
-    with tf.variable_scope('FFN_2'):
+    with tf.variable_scope('FFN_2',reuse=tf.AUTO_REUSE):
         z = op.dense(y, out_dimension_1) #, add_bias=False)  #!!!!
     return z
 
@@ -189,23 +189,25 @@ def block(
 
     Raises:
     '''
+    # att.shape = (batch_size, max_turn_len, emb_size)
     att = attention(Q, K, V, 
                     Q_lengths, K_lengths, 
                     attention_type='dot', 
                     is_mask=is_mask, mask_value=mask_value,
                     drop_prob=drop_prob)
     if is_layer_norm:
-        with tf.variable_scope('attention_layer_norm'):
+        with tf.variable_scope('attention_layer_norm',reuse=tf.AUTO_REUSE):
             y = op.layer_norm_debug(Q + att)
     else:
         y = Q + att
 
     z = FFN(y)
     if is_layer_norm:
-        with tf.variable_scope('FFN_layer_norm'):
+        with tf.variable_scope('FFN_layer_norm',reuse=tf.AUTO_REUSE):
             w = op.layer_norm_debug(y + z)
     else:
         w = y + z
+    # w.shape = (batch_size, max_turn_len, emb_size)
     return w
 
 def CNN(x, out_channels, filter_size, pooling_size, add_relu=True):
@@ -279,7 +281,7 @@ def CNN_3d(x, out_channels_0, out_channels_1, add_relu=True):
         initializer=tf.zeros_initializer())
 
     conv_0 = tf.nn.conv3d(x, weights_0, strides=[1, 1, 1, 1, 1], padding="SAME")
-    print('conv_0 shape: %s' %conv_0.shape)
+    # print('conv_0 shape: %s' %conv_0.shape)
     conv_0 = conv_0 + bias_0
 
     if add_relu:
@@ -290,7 +292,7 @@ def CNN_3d(x, out_channels_0, out_channels_1, add_relu=True):
         ksize=[1, 3, 3, 3, 1],
         strides=[1, 3, 3, 3, 1], 
         padding="SAME")
-    print('pooling_0 shape: %s' %pooling_0.shape)
+    # print('pooling_0 shape: %s' %pooling_0.shape)
 
     #layer_1
     weights_1 = tf.get_variable(
@@ -305,7 +307,7 @@ def CNN_3d(x, out_channels_0, out_channels_1, add_relu=True):
         initializer=tf.zeros_initializer())
 
     conv_1 = tf.nn.conv3d(pooling_0, weights_1, strides=[1, 1, 1, 1, 1], padding="SAME")
-    print('conv_1 shape: %s' %conv_1.shape)
+    # print('conv_1 shape: %s' %conv_1.shape)
     conv_1 = conv_1 + bias_1
 
     if add_relu:
@@ -316,7 +318,7 @@ def CNN_3d(x, out_channels_0, out_channels_1, add_relu=True):
         ksize=[1, 3, 3, 3, 1],
         strides=[1, 3, 3, 3, 1], 
         padding="SAME")
-    print('pooling_1 shape: %s' %pooling_1.shape)
+    # print('pooling_1 shape: %s' %pooling_1.shape)
 
     return tf.contrib.layers.flatten(pooling_1)
 
@@ -426,7 +428,7 @@ def CNN_3d_change(x, out_channels_0, out_channels_1, add_relu=True):
     conv_0 = conv_0 + bias_0
     #######
     '''
-    with tf.variable_scope('layer_0'):
+    with tf.variable_scope('layer_0',reuse=tf.AUTO_REUSE):
         conv_0 = op.layer_norm(conv_0, axis=[1, 2, 3, 4])
         print('layer_norm in cnn')
     '''

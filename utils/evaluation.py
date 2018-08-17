@@ -28,7 +28,6 @@ def evaluate(file_path):
     length = int(len(data) / 100)
     for i in range(length):
         ind = i * 100
-        assert data[ind][1] == 1
 
         p_at_1_in_100 += get_p_at_n_in_m(data, 1, 100, ind)
         p_at_2_in_100 += get_p_at_n_in_m(data, 2, 100, ind)

@@ -1,10 +1,11 @@
 from utils.data_generator import DataGenerator
+import utils.evaluation as eva
 
 # configure
 
 ubuntu_conf = {
     "data_path": "/hdd/lujunyu/dataset/DAM_data/DSTC7_1/official_prepocessing_small.pkl",
-    "save_path": "./output/check/temp/",
+    "save_path": "/home/lujunyu/repository/DSTC7/official-baseline/output/product_prob/temp/",
     "word_emb_init": "/hdd/lujunyu/dataset/DAM_data/DSTC7_1/embed4data_official",
 
     'train_context':'/hdd/lujunyu/dataset/DSTC7_track1/baseline_DAM/subtask1/u_train_context_small.pkl',
@@ -45,5 +46,12 @@ ubuntu_conf = {
 }
 
 
-dg = DataGenerator(ubuntu_conf)
-example_id, turns, turn_num, turn_len, response, response_len, label = dg.train_data_generator(0)
+# dg = DataGenerator(ubuntu_conf)
+# example_id, turns, turn_num, turn_len, response, response_len, label = dg.train_data_generator(0)
+
+index = 29
+dev_score_file_path = ubuntu_conf['save_path'] + 'dev_score.' + str(index) + '.0'
+dev_result = eva.evaluate(dev_score_file_path)
+for p_at in dev_result:
+    print(p_at)
+print('finish dev evaluation')

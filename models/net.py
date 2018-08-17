@@ -1,13 +1,23 @@
 import tensorflow as tf
-from models.dual_encoder import dual_encoder_model
-from models.dual_encoder_cnn import dual_encoder_CNN_model
-from models.dual_encoder_attention import dual_encoder_Attention_model
+
 
 class Net(object):
     def __init__(self, conf):
         self._graph = tf.Graph()
         self._conf = conf
-        self.Model = dual_encoder_Attention_model
+        if conf['Model'] == 'BiLSTM':
+            from models.dual_encoder import dual_encoder_model as model
+        elif conf['Model'] == 'CNN':
+            from models.dual_encoder_cnn import dual_encoder_CNN_model as model
+        elif conf['Model'] == 'LSTM_ATTENTION':
+            from models.dual_encoder_attention import dual_encoder_Attention_model as model
+        elif conf['Model'] == 'DAM':
+            from models.self_cross_attention_net import self_cross_attention as model
+        elif conf['Model'] == 'DAM_p':
+            from models.self_cross_attention_net_parallel import self_cross_attention as model
+        else:
+            model = None
+        self.Model = model
 
 
     def build_graph(self):
@@ -21,34 +31,35 @@ class Net(object):
             #define placehloders
             self.turns = tf.placeholder(
                 tf.int32,
-                shape=[None, self._conf['max_turn_num'], self._conf['max_turn_len']])
+                shape=[self._conf['batch_size'], self._conf['max_turn_num'], self._conf['max_turn_len']])
 
             self.turn_num = tf.placeholder(
                 tf.int32,
-                shape=[None])
+                shape=[self._conf['batch_size']])
 
             self.turn_len = tf.placeholder(
                 tf.int32,
-                shape=[None, self._conf['max_turn_num']])
+                shape=[self._conf['batch_size'], self._conf['max_turn_num']])
     
             self.response = tf.placeholder(
                 tf.int32, 
-                shape=[None, self._conf['options_num'], self._conf['max_turn_len']])
+                shape=[self._conf['batch_size'], self._conf['options_num'], self._conf['max_turn_len']])
 
             self.response_len = tf.placeholder(
                 tf.int32, 
-                shape=[None, self._conf['options_num']])
+                shape=[self._conf['batch_size'], self._conf['options_num']])
 
             self.label = tf.placeholder(
                 tf.int32,
-                shape=[None])
+                shape=[self._conf['batch_size']])
 
             self.table = tf.placeholder(
                 tf.float32,
                 shape=[self._conf['vocab_size'], self._conf['emb_size']])
 
             # convert table to variable
-            self.table_v = tf.Variable(self.table, name='table')
+            with tf.device('/cpu:0'):
+                self.table_v = tf.Variable(self.table, name='table')
 
             # C.shape = (batch_size, max_turn_num, max_turn_len, embed_dim)
             self.turns_embed = tf.nn.embedding_lookup(self.table_v, self.turns)

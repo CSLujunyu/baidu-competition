@@ -52,7 +52,7 @@ def dual_encoder_Attention_model(
                 dtype=tf.float32)
             context_encoded = tf.concat([context_encoded[0][1],context_encoded[1][1]], axis=1)
             all_turn_encoded.append(context_encoded)
-        # all_turn_encoded.shape = (batch_size, max_turn_len, lstm_cell*2)
+        # all_turn_encoded.shape = (batch_size, max_turn_num, lstm_cell*2)
         all_turn_encoded = tf.stack(all_turn_encoded, axis= 1)
 
     # Build the Utterance Encoder RNN
@@ -70,6 +70,7 @@ def dual_encoder_Attention_model(
             state_is_tuple=True)
         # Run all utterances through the RNN batch by batch
         all_candidate_encoded = []
+        # TODO: fix dynamic batch size bug
         for i in range(config['batch_size']):
             # utterances_embedded[:,i].shape = (options, sentence_len, embed_dim)
             # temp_outputs.shape = (options, sentence_len, lstm_cell)
@@ -87,28 +88,32 @@ def dual_encoder_Attention_model(
         # all_candidate_encoded.shape = (batch_size, options, lstm_cell*2)
         all_candidate_encoded = tf.stack(all_candidate_encoded, axis=0)
 
-    with tf.variable_scope("prediction") as vs:
+    with tf.variable_scope("attention"):
         M = tf.get_variable("M",shape=[all_turn_encoded.shape[-1], all_candidate_encoded.shape[-1]],initializer=tf.truncated_normal_initializer())
 
-        # "Predict" a  response: c * M
         # generated_response.shape = (batch_size, max_turn_num, lstm_cell*2)
         generated_response = tf.einsum('aij,jm->aim', all_turn_encoded, M)
 
-        # all_candidate_encoded.shape = (batch_size, lstm_cell*2, options )
-        all_candidate_encoded = tf.transpose(all_candidate_encoded, perm=[0, 2, 1])
+        # all_candidate_encoded_T.shape = (batch_size, lstm_cell*2, options )
+        all_candidate_encoded_T = tf.transpose(all_candidate_encoded, perm=[0, 2, 1])
 
         # Dot product between generated response and actual response
         # (c * M) * r logits.shape = (batch_size, max_turn_num, options)
-        logits = tf.matmul(generated_response, all_candidate_encoded)
+        logits = tf.matmul(generated_response, all_candidate_encoded_T)
 
-        # # logits.shape = (batch_size, options)
-        logits = tf.reduce_sum(logits, axis= 1)
+    # Attention
+    # attention.shape = (batch_size, options, lstm_cell*4)
+    attention = tf.nn.softmax(logits,axis=1)
+    attention = tf.reduce_sum(tf.einsum('bto,btl->botl',attention, all_turn_encoded), axis=2)
+    attention = tf.concat([attention, all_candidate_encoded], axis=2)
 
-        # Apply sigmoid to convert logits to probabilities
-        # probs.shape = (batch_size, options)
-        probs = tf.nn.softmax(logits)
+    # linear
+    with tf.variable_scope('linear',reuse=tf.AUTO_REUSE):
+        W = tf.get_variable('W',shape=[attention.shape[-1],1],initializer=tf.orthogonal_initializer)
+        b = tf.get_variable('b',shape=[1],initializer=tf.zeros_initializer)
+    logits = tf.reduce_sum(tf.einsum('bij,jk->bik',attention,W),axis=-1) + b
 
-
+    probs = tf.nn.softmax(logits)
 
 
     return probs, logits

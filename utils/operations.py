@@ -72,18 +72,13 @@ def bilinear_sim(x, y, is_nor=True):
         return sim
 
 def dot_sim(x, y, is_nor=True):
-    '''calculate dot similarity with two tensor.
+    """
 
-    Args:
-        x: a tensor with shape [batch, time_x, dimension]
-        y: a tensor with shape [batch, time_y, dimension]
-    
-    Returns:
-        a tensor with shape [batch, time_x, time_y]
-    Raises:
-        AssertionError: if
-            the shapes of x and y are not match.
-    '''
+    :param x: shape = (batch)
+    :param y:
+    :param is_nor:
+    :return:
+    """
     assert x.shape[-1] == y.shape[-1]
 
     sim = tf.einsum('bik,bjk->bij', x, y)

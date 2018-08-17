@@ -2,6 +2,7 @@ import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
+
 import models.net as net
 import bin.train_and_evaluate as train
 
@@ -37,7 +38,7 @@ ubuntu_conf = {
     "learning_rate": 1e-3,
     "vocab_size": 108290,    #434513 for DAM  ， 128205 for dstc
     "emb_size": 300,
-    "batch_size": 100, #200 for test
+    "batch_size": 50, #200 for test
 
     "max_turn_num": 10,
     "max_turn_len": 60,
@@ -49,7 +50,8 @@ ubuntu_conf = {
 
     "rnn_dim":256,
     'options_num':100,
-    'conv_filter_num':50
+    'conv_filter_num':100,
+    'Model':'DAM'
 }
 
 
