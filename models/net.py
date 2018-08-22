@@ -7,6 +7,8 @@ class Net(object):
         self._conf = conf
         if conf['Model'] == 'BiLSTM':
             from models.dual_encoder import dual_encoder_model as model
+        elif conf['Model'] == 'BiLSTM_tw':
+            from models.dual_encoder_tw import dual_encoder_tw_model as model
         elif conf['Model'] == 'CNN':
             from models.dual_encoder_cnn import dual_encoder_CNN_model as model
         elif conf['Model'] == 'LSTM_ATTENTION':
@@ -14,7 +16,7 @@ class Net(object):
         elif conf['Model'] == 'DAM':
             from models.self_cross_attention_net import self_cross_attention as model
         elif conf['Model'] == 'DAM_p':
-            from models.self_cross_attention_net_parallel import self_cross_attention as model
+            from models.self_cross_attention_net_parallel import self_cross_attention_net_parallel as model
         else:
             model = None
         self.Model = model
@@ -67,10 +69,10 @@ class Net(object):
             self.response_embed = tf.nn.embedding_lookup(self.table_v, self.response)
 
             # Dual encoder model
-            self.probs, self.de_logits = self.Model(self._conf, self.turns_embed, self.turn_len, self.response_embed, self.response_len)
+            self.probs, self.de_logits, self.reg = self.Model(self._graph, self._conf, self.turns_embed, self.turn_len, self.turn_num ,self.response_embed, self.response_len)
 
             # Calculate cross-entropy loss
-            self.de_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.de_logits, labels=self.label), name='de_loss')
+            self.de_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.de_logits, labels=self.label), name='de_loss') + self.reg
 
             self.opt = tf.train.AdamOptimizer(self._conf['learning_rate']).minimize(self.de_loss)
 

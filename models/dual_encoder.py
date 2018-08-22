@@ -1,9 +1,11 @@
 import tensorflow as tf
 
 def dual_encoder_model(
+        graph,
         config,
         context_embedded,
         context_len,
+        turns_num,
         utterances_embedded,
         utterances_len
         ):
@@ -25,7 +27,7 @@ def dual_encoder_model(
 
 
     # Build the Context Encoder RNN
-    with tf.variable_scope("encoder-rnn") as vs:
+    with tf.variable_scope("encoder-context") as vs:
         # We use an LSTM Cell
         fw_cell_context = tf.nn.rnn_cell.LSTMCell(
             config['rnn_dim'],
@@ -55,8 +57,13 @@ def dual_encoder_model(
         # all_turn_encoded.shape = (batch_size, max_turn_len, lstm_cell*2)
         all_turn_encoded = tf.stack(all_turn_encoded, axis= 1)
 
+        # regularization
+        reg_context = tf.contrib.layers.l2_regularizer(config['reg_rate'])(graph.get_tensor_by_name(
+            'encoder-context/bidirectional_rnn/fw/lstm_cell/kernel:0')) + tf.contrib.layers.l2_regularizer(
+            config['reg_rate'])(graph.get_tensor_by_name('encoder-context/bidirectional_rnn/bw/lstm_cell/kernel:0'))
+
     # Build the Utterance Encoder RNN
-    with tf.variable_scope("decoder-rnn") as vs:
+    with tf.variable_scope("encoder-candidate") as vs:
         # We use an LSTM Cell
         fw_cell_utterance = tf.nn.rnn_cell.LSTMCell(
             config['rnn_dim'],
@@ -87,19 +94,18 @@ def dual_encoder_model(
         # all_candidate_encoded.shape = (batch_size, options, lstm_cell*2)
         all_candidate_encoded = tf.stack(all_candidate_encoded, axis=0)
 
-    with tf.variable_scope("prediction") as vs:
-        M = tf.get_variable("M",shape=[all_turn_encoded.shape[-1], all_candidate_encoded.shape[-1]],initializer=tf.truncated_normal_initializer())
+        reg_candidate = tf.contrib.layers.l2_regularizer(config['reg_rate'])(graph.get_tensor_by_name(
+            'encoder-candidate/bidirectional_rnn/fw/lstm_cell/kernel:0')) + tf.contrib.layers.l2_regularizer(
+            config['reg_rate'])(graph.get_tensor_by_name('encoder-candidate/bidirectional_rnn/bw/lstm_cell/kernel:0'))
 
-        # "Predict" a  response: c * M
-        # generated_response.shape = (batch_size, max_turn_num, lstm_cell*2)
-        generated_response = tf.einsum('aij,jm->aim', all_turn_encoded, M)
+    with tf.variable_scope("prediction"):
 
         # all_candidate_encoded.shape = (batch_size, lstm_cell*2, options )
         all_candidate_encoded = tf.transpose(all_candidate_encoded, perm=[0, 2, 1])
 
         # Dot product between generated response and actual response
-        # (c * M) * r logits.shape = (batch_size, max_turn_num, options)
-        logits = tf.matmul(generated_response, all_candidate_encoded)
+        # c * r logits.shape = (batch_size, max_turn_num, options)
+        logits = tf.matmul(all_turn_encoded, all_candidate_encoded)
 
         # # logits.shape = (batch_size, options)
         logits = tf.reduce_sum(logits, axis= 1)
@@ -111,4 +117,4 @@ def dual_encoder_model(
 
 
 
-    return probs, logits
+    return probs, logits, reg_context + reg_candidate
