@@ -12,11 +12,15 @@ class DataGenerator():
         self.dev_context, self.dev_respone, self.dev_label = self.load_dev_data()
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Dev Data')
 
+        self.test_context, self.test_respone, self.test_label = self.load_test_data()
+        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Test Data')
+
         self.table = self.table_generator()
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Table')
 
         self.train_data_size = len(self.train_label)
         self.dev_data_size = len(self.dev_label)
+        self.test_data_size = len(self.test_label)
 
 
     def train_data_generator(self,batch_num):
@@ -63,6 +67,30 @@ class DataGenerator():
             batches_label = self.dev_label[start:]
             batches_context = self.dev_context[start:]
             batches_response = self.dev_respone[start:]
+
+        turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context,
+                                                                                          batches_response,
+                                                                                          batches_label)
+
+        return turns, turn_num, turn_len, response, response_len, label
+
+    def test_data_generator(self, batch_num):
+        """
+           This function return training/validation/test data for classifier. batch_num*batch_size is start point of the batch.
+           :param batch_size: int. the size of each batch
+           :return: [[[float32,],],]. [[[wordembedding]element,]batch,]
+           """
+
+        start = batch_num * self.configs['batch_size']
+        end = (batch_num * self.configs['batch_size'] + self.configs['batch_size'])
+        if start < end:
+            batches_label = self.test_label[start:end]
+            batches_context = self.test_context[start:end]
+            batches_response = self.test_respone[start:end]
+        else:
+            batches_label = self.test_label[start:]
+            batches_context = self.test_context[start:]
+            batches_response = self.test_respone[start:]
 
         turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context,
                                                                                           batches_response,
@@ -147,7 +175,7 @@ class DataGenerator():
             sent_list = []
             tmp = []
             num = 0
-            for word in context['cc'][c]:
+            for word in context['c'][c]:
                 if word != eos_idx:
                     num += 1
                     tmp.append(word)
@@ -200,7 +228,7 @@ class DataGenerator():
             for r in range(options_num):
                 options_response_len = 0
                 options_sent = []
-                for word in example_data['rr'][r]:
+                for word in example_data['r'][r]:
                     if options_response_len >= max_respone_len:
                         break
                     else:
@@ -273,4 +301,27 @@ class DataGenerator():
 
 
         return dev_context, dev_response, dev_label
+
+    def load_test_data(self):
+
+        if os.path.exists(self.configs['process_test_data']) and os.path.getsize(self.configs['process_test_data']) > 0:
+            with open(self.configs['process_test_data'],'rb') as f:
+                test_context, test_response, test_label = pickle.load(f)
+        else:
+
+            with open(self.configs['test_context'], 'rb') as f:
+                context  = pickle.load(f)
+
+            with open(self.configs['test_response'], 'rb') as f:
+                response  = pickle.load(f)
+
+            test_context = self.get_context(context)
+            test_response = self.get_response(response)
+            test_label = self.get_label(response)
+
+            with open(self.configs['process_test_data'], 'wb') as f:
+                pickle.dump((test_context, test_response, test_label), f)
+
+
+        return test_context, test_response, test_label
 
