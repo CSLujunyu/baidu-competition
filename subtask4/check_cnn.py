@@ -25,7 +25,7 @@ ubuntu_conf = {
     # 'dev_response': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/15_60/small_dev_response.pkl',
     # 'test_context':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/15_60/small_test_context.pkl',
     # 'test_response':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/15_60/small_test_response.pkl',
-
+    #
     # 'process_train_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/small_DE_process_train.pkl',
     # 'process_dev_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/small_DE_process_dev.pkl',
     # 'process_test_data': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/small_DE_process_test.pkl',

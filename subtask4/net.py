@@ -1,4 +1,5 @@
 import tensorflow as tf
+from subtask4.layers import hinge_loss
 
 
 class Net(object):
@@ -6,13 +7,9 @@ class Net(object):
         self._graph = tf.Graph()
         self._conf = conf
         if conf['Model'] == 'WCNN_S_A':
-            from models.dual_encoder_tw_wcnn_stack_coattention import dual_encoder_wcnn_stack_model as model
-        elif conf['Model'] == 'WCNN':
-            from models.dual_encoder_tw_wcnn import dual_encoder_wcnn_model as model
-        elif conf['Model'] == 'WCNN_S':
             from models.dual_encoder_tw_wcnn_stack_beifen import dual_encoder_wcnn_stack_model as model
         elif conf['Model'] == 'WCNN_S_BN':
-            from models.dual_encoder_tw_wcnn_stack import dual_encoder_wcnn_stack_model as model
+            from subtask4.dual_encoder_tw_wcnn_stack import dual_encoder_wcnn_stack_model as model
         else:
             model = None
         self.Model = model
@@ -91,9 +88,11 @@ class Net(object):
                                                                                   labels=self.label),
                                           name='de_loss') +  self._conf['reg_rate'] * regularization_cost
 
+
             self.opt = tf.train.AdamOptimizer(self._conf['learning_rate']).minimize(self.de_loss)
 
             self.saver = tf.train.Saver(max_to_keep=self._conf["max_to_keep"])
 
         return self._graph
+
 

@@ -683,5 +683,19 @@ def RNN_last_state(x, lengths, hidden_size):
     outputs, last_states = tf.nn.dynamic_rnn(cell, x, lengths, dtype=tf.float32)
     return outputs, last_states
 
+def hinge_loss(logits, label, mask_value=-2**32+1, margin=5.0):
+    """
+
+    :param logits: shape = (batch_size, options_num)
+    :param label: shape = (batch_size, options_num)
+    :return:
+    """
+    true_score = logits * label
+    max_true = (tf.ones_like(true_score) * margin - true_score) * label
+    false_score = tf.where(tf.equal(label, tf.zeros_like(label)), logits, tf.ones_like(logits) * mask_value)
+    max_false = (tf.ones_like(true_score) * margin + false_score) * (tf.ones_like(label) - label)
+    loss = tf.reduce_mean(tf.reduce_max(max_true,axis=1) + tf.reduce_max(max_false,axis=1),axis=0)
+
+    return loss, max_true, max_false
 
 

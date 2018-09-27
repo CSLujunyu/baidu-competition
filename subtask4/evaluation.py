@@ -2,32 +2,24 @@ import numpy as np
 
 def get_p_at_n_in_m(data, n, m, ind, none_flag):
     curr = data[ind:ind+m]
-    curr = sorted(curr, key = lambda x:x[0], reverse=True)
-    if none_flag:
-        flag = np.sum(np.array(curr)[:n,1])
-        if flag == 1:
-            return 1
-        else:
-            return 0
+    if none_flag!=1:
+        curr.append([0,1])
+    curr = sorted(curr, key = lambda x:x[0], reverse=True)[:m]
+    flag = np.sum(np.array(curr)[:n,1])
+    if flag == 1:
+        return 1
     else:
-        if np.array(curr)[-1][0] <= 0:
-            return 1
-        else:
-            return 0
+        return 0
 
 def MRR(data,ind, none_flag):
     curr = data[ind:ind + 100]
-    curr = sorted(curr, key=lambda x: x[0], reverse=True)
-    if none_flag:
-        for n, item in enumerate(curr):
-            if item[1] == 1:
-                return 1/(n+1)
-        return 0.0
-    else:
-        for n, item in enumerate(curr):
-            if item[0] <= 0:
-                return 1/(n+1)
-        return 0.0
+    if none_flag != 1:
+        curr.append([0, 1])
+    curr = sorted(curr, key=lambda x: x[0], reverse=True)[:100]
+    for n, item in enumerate(curr):
+        if item[1] == 1:
+            return 1/(n+1)
+    return 0.0
 
 def evaluate(file_path):
     data = []
@@ -38,7 +30,7 @@ def evaluate(file_path):
             if len(tokens) != 4:
                 continue
 
-            data.append((float(tokens[2]), int(tokens[3])))
+            data.append([float(tokens[2]), int(tokens[3])])
 
     p_at_1_in_100 = 0.0
     p_at_2_in_100 = 0.0
