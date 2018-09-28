@@ -1,5 +1,5 @@
 import tensorflow as tf
-from utils.layers import CNN_3d
+from utils.layers import CNN_3d_3bn
 
 def dual_encoder_wcnn_stack_model(
         graph,
@@ -9,7 +9,8 @@ def dual_encoder_wcnn_stack_model(
         turns_num,
         utterances_embedded,
         utterances_len,
-        keep_rate
+        keep_rate,
+        is_training
         ):
     """
 
@@ -36,23 +37,13 @@ def dual_encoder_wcnn_stack_model(
         w_attention = tf.unstack(w_attention, axis=-1)
         w_attention_fino = []
         for t in w_attention:
-            s = CNN_3d(t,10,5)
-            W = tf.get_variable(
-                name='weights',
-                shape=[s.shape[-1], 1],
-                initializer=tf.orthogonal_initializer())
-            bias = tf.get_variable(
-                name='bias',
-                shape=[1],
-                initializer=tf.zeros_initializer())
-
-            s = tf.reshape(tf.matmul(s, W) + bias, [-1])
+            s = CNN_3d_3bn(t,config['cnn_channel'], kernel_size=config['kernel_size'], is_training=is_training)
             w_attention_fino.append(s)
 
         # Dot product between generated response and actual response
         # c * r logits.shape = (batch_size, options)
         # w_attention_fino.shape = (batch_size, options_num)
-        logits = tf.stack(w_attention_fino, axis=-1)
+        logits = tf.concat(w_attention_fino, axis=-1)
         check.append(logits)
 
         # Apply sigmoid to convert logits to probabilities
