@@ -133,7 +133,7 @@ class DataGenerator():
         return a[p], b[p], p
 
     def unison_shuffled_copies(self, a, b, c, d):
-        assert len(a) == len(b) == len(c) == d
+        assert len(a) == len(b) == len(c) == len(d)
         p = np.random.permutation(len(a))
         return a[p], b[p], c[p], d[p], p
 
