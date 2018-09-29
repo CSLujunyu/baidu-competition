@@ -25,7 +25,7 @@ ubuntu_conf = {
     'process_dev_data': os.path.join(model_data_path,'DE_process_dev.pkl'),
     'process_test_data': os.path.join(model_data_path,'DE_process_test.pkl'),
 
-    "save_path": os.path.join(model_data_path,'model_1/'),
+    "save_path": os.path.join(model_path,'model_1/'),
     "word_emb_init": os.path.join(model_data_path,'embed4data.pkl'),
 
 

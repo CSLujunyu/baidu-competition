@@ -67,6 +67,7 @@ class DataGenerator():
             batches_context = self.dev_context[start:]
             batches_response = self.dev_respone[start:]
 
+
         e_id, turns, turn_num, turn_len, r_id, response, response_len, label = self.batch2placeholder(batches_context,
                                                                                                       batches_response)
 
@@ -122,7 +123,7 @@ class DataGenerator():
         assert example_id_c == example_id_r
 
         # shuffle respone order in one example
-        response, response_len, label = self.shuffle_response(response, response_len, label)
+        candidat_id, response, response_len, label = self.shuffle_response(candidat_id, response, response_len, label)
 
         return example_id_c, turns, turn_num, turn_len, candidat_id, response, response_len, label
 
@@ -131,12 +132,12 @@ class DataGenerator():
         p = np.random.permutation(len(a))
         return a[p], b[p], p
 
-    def unison_shuffled_copies(self, a, b, c):
-        assert len(a) == len(b) == len(c)
+    def unison_shuffled_copies(self, a, b, c, d):
+        assert len(a) == len(b) == len(c) == d
         p = np.random.permutation(len(a))
-        return a[p], b[p], c[p], p
+        return a[p], b[p], c[p], d[p], p
 
-    def shuffle_response(self,response, response_len, label):
+    def shuffle_response(self,candidate_id, response, response_len, label):
         """
         responses contain ground truth id
         :param response: (batch_size, options_num, max_turn_len)
@@ -144,13 +145,12 @@ class DataGenerator():
         :param label: (batch_size, options_num)
         :return:
         """
-        response, response_len, label = list(response), list(response_len), list(label)
+        candidate_id, response, response_len, label = list(candidate_id), list(response), list(response_len), list(label)
         for i in range(len(response)):
-            response[i], response_len[i], label[i], _ = self.unison_shuffled_copies(response[i],
-                                                                                    response_len[i],
-                                                                                    label[i])
+            candidate_id[i], response[i], response_len[i], label[i], _ = self.unison_shuffled_copies(
+                candidate_id[i],response[i],response_len[i],label[i])
 
-        return response, response_len, label
+        return candidate_id, response, response_len, label
 
 
     def get_context(self, context):
