@@ -189,12 +189,12 @@ class DataGenerator():
                         pad = [0] * (max_turn_len - num)
                         example_turn_len.append(num)
                         tmp += pad
-                    sent_list.append(np.array(tmp))
+                    sent_list.append(np.array(tmp,dtype=np.int32))
                     tmp = []
                     num = 0
 
             # padding zero vector to normalize turn num
-            pad_sent = np.array([0] * max_turn_len)
+            pad_sent = np.array([0] * max_turn_len,dtype=np.int32)
             if len(sent_list) < max_turn_num:
                 example_turn_num = len(sent_list)
                 for i in range(max_turn_num - len(sent_list)):
@@ -205,7 +205,8 @@ class DataGenerator():
                 sent_list = sent_list[-max_turn_num:]
                 example_turn_len = example_turn_len[-max_turn_num:]
 
-            res = np.array([context['example-id'][c], np.array(sent_list), example_turn_num, np.array(example_turn_len)],dtype=object)
+            res = np.array([context['example-id'][c], np.array(sent_list,dtype=np.int32), example_turn_num,
+                            np.array(example_turn_len,dtype=np.int32)],dtype=object)
             saver.append(res)
 
         return np.array(saver)
@@ -246,17 +247,18 @@ class DataGenerator():
                     pad = [0] * (max_respone_len - len(options_sent))
                     options_sent += pad
 
-                example_sent.append(np.array(options_sent))
+                example_sent.append(np.array(options_sent,dtype=np.int32))
                 example_response_len.append(options_response_len)
 
             if flag == 'test':
                 res = np.array([response['example-id'][e * options_num], np.array(example_data['candidate-id']),
-                                np.array(example_sent), np.array(example_response_len),
+                                np.array(example_sent,dtype=np.int32), np.array(example_response_len,dtype=np.int32),
                                 np.array([None] * len(example_data))],
                                dtype=object)
             else:
                 res = np.array([response['example-id'][e * options_num], np.array(example_data['candidate-id']),
-                                np.array(example_sent), np.array(example_response_len), np.array(example_data['y'])],
+                                np.array(example_sent,dtype=np.int32), np.array(example_response_len,dtype=np.int32),
+                                np.array(example_data['y'])],
                                dtype=object)
             saver.append(res)
 
@@ -268,10 +270,10 @@ class DataGenerator():
             with open(self.configs['process_train_data'],'rb') as f:
                 train_context, train_response = pickle.load(f)
         else:
-            with open(self.configs['train_context'], 'rb') as f:
+            with open(self.configs['train_context_path'], 'rb') as f:
                 context  = pickle.load(f)
 
-            with open(self.configs['train_response'], 'rb') as f:
+            with open(self.configs['train_response_path'], 'rb') as f:
                 response  = pickle.load(f)
 
             train_context = self.get_context(context)
@@ -290,10 +292,10 @@ class DataGenerator():
                 dev_context, dev_response = pickle.load(f)
         else:
 
-            with open(self.configs['dev_context'], 'rb') as f:
+            with open(self.configs['dev_context_path'], 'rb') as f:
                 context  = pickle.load(f)
 
-            with open(self.configs['dev_response'], 'rb') as f:
+            with open(self.configs['dev_response_path'], 'rb') as f:
                 response  = pickle.load(f)
 
             dev_context = self.get_context(context)
@@ -312,10 +314,10 @@ class DataGenerator():
                 test_context, test_response = pickle.load(f)
         else:
 
-            with open(self.configs['test_context'], 'rb') as f:
+            with open(self.configs['test_context_path'], 'rb') as f:
                 context  = pickle.load(f)
 
-            with open(self.configs['test_response'], 'rb') as f:
+            with open(self.configs['test_response_path'], 'rb') as f:
                 response  = pickle.load(f)
 
             test_context = self.get_context(context)
