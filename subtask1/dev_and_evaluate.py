@@ -6,8 +6,8 @@ import pickle
 import tensorflow as tf
 import numpy as np
 
-import subtask1.evaluation as eva
-from subtask1.data_generator import DataGenerator
+import utils.evaluation as eva
+from utils.data_generator import DataGenerator
 
 
 def test(conf, _model):
@@ -44,7 +44,7 @@ def test(conf, _model):
         # caculate test score
         for batch_index in range(test_batch_num):
             print(batch_index)
-            test_data = dg.test_data_generator(
+            turns, turn_num, turn_len, response, response_len, label = dg.test_data_generator(
                 batch_index)
             feed = {
                 _model.turns: turns,
@@ -61,8 +61,13 @@ def test(conf, _model):
 
             for i in range(conf["batch_size"]):
                 for j in range(conf['options_num']):
+                    if j == label[i]:
+                        lab = 1
+                    else:
+                        lab = 0
                     test_score_file.write(
-                        str(scores[i][j]) + '\t')
+                        str(scores[i][j]) + '\t' +
+                        str(lab) + '\n')
         test_score_file.close()
 
         # write evaluation result

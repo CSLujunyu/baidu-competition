@@ -6,21 +6,21 @@ import time
 class DataGenerator():
     def __init__(self, configs):
         self.configs = configs
-        self.train_context, self.train_respone, self.train_label = self.load_train_data()
+        self.train_context, self.train_respone = self.load_train_data()
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Training Data')
 
-        self.dev_context, self.dev_respone, self.dev_label = self.load_dev_data()
+        self.dev_context, self.dev_respone = self.load_dev_data()
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Dev Data')
 
-        self.test_context, self.test_respone, self.test_label = self.load_test_data()
+        self.test_context, self.test_respone = self.load_test_data()
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Test Data')
 
         self.table = self.table_generator()
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Loading Table')
 
-        self.train_data_size = len(self.train_label)
-        self.dev_data_size = len(self.dev_label)
-        self.test_data_size = len(self.test_label)
+        self.train_data_size = len(self.train_context)
+        self.dev_data_size = len(self.dev_context)
+        self.test_data_size = len(self.test_context)
 
 
     def train_data_generator(self,batch_num):
@@ -31,23 +31,24 @@ class DataGenerator():
 
         # shuffle data at the beginning of every epoch
         if batch_num == 0:
-            self.train_context, self.train_respone, self.train_label, _ = self.unison_shuffled_copies(self.train_context,
-                                                                                               self.train_respone,
-                                                                                               self.train_label)
+            self.train_context, self.train_respone, _ = self.unison_shuffled(self.train_context,
+                                                                             self.train_respone)
             print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Finish Shuffling Data:')
 
         if start < end:
-            batches_label = self.train_label[start:end]
             batches_context = self.train_context[start:end]
             batches_response = self.train_respone[start:end]
         else:
-            batches_label = self.train_label[train_size - self.configs['batch_size']:train_size]
             batches_context = self.train_context[train_size - self.configs['batch_size']:train_size]
             batches_response = self.train_respone[train_size - self.configs['batch_size']:train_size]
 
-        turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context, batches_response, batches_label)
+        e_id, turns, turn_num, turn_len, r_id, response, response_len, label = self.batch2placeholder(batches_context,
+                                                                                                      batches_response)
 
-        return turns, turn_num, turn_len, response, response_len, label
+        data = {'example_id':e_id, 'turns':turns, 'turn_num':turn_num, 'turn_len':turn_len, 'candidate_id':r_id,
+                'response':response, 'response_len':response_len, 'label':label}
+
+        return data
 
     def dev_data_generator(self, batch_num):
         """
@@ -60,19 +61,19 @@ class DataGenerator():
         start = batch_num * self.configs['batch_size'] % dev_size
         end = (batch_num * self.configs['batch_size'] + self.configs['batch_size']) % dev_size
         if start < end:
-            batches_label = self.dev_label[start:end]
             batches_context = self.dev_context[start:end]
             batches_response = self.dev_respone[start:end]
         else:
-            batches_label = self.dev_label[start:]
             batches_context = self.dev_context[start:]
             batches_response = self.dev_respone[start:]
 
-        turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context,
-                                                                                          batches_response,
-                                                                                          batches_label)
+        e_id, turns, turn_num, turn_len, r_id, response, response_len, label = self.batch2placeholder(batches_context,
+                                                                                                      batches_response)
 
-        return turns, turn_num, turn_len, response, response_len, label
+        data = {'example_id': e_id, 'turns': turns, 'turn_num': turn_num, 'turn_len': turn_len, 'candidate_id': r_id,
+                'response': response, 'response_len': response_len, 'label': label}
+
+        return data
 
     def test_data_generator(self, batch_num):
         """
@@ -84,19 +85,19 @@ class DataGenerator():
         start = batch_num * self.configs['batch_size']
         end = (batch_num * self.configs['batch_size'] + self.configs['batch_size'])
         if start < end:
-            batches_label = self.test_label[start:end]
             batches_context = self.test_context[start:end]
             batches_response = self.test_respone[start:end]
         else:
-            batches_label = self.test_label[start:]
             batches_context = self.test_context[start:]
             batches_response = self.test_respone[start:]
 
-        turns, turn_num, turn_len, response, response_len, label = self.batch2placeholder(batches_context,
-                                                                                          batches_response,
-                                                                                          batches_label)
+        e_id, turns, turn_num, turn_len, r_id, response, response_len, label = self.batch2placeholder(batches_context,
+                                                                                                      batches_response)
 
-        return turns, turn_num, turn_len, response, response_len, label
+        data = {'example_id': e_id, 'turns': turns, 'turn_num': turn_num, 'turn_len': turn_len, 'candidate_id': r_id,
+                'response': response, 'response_len': response_len, 'label': label}
+
+        return data
 
 
     def table_generator(self):
@@ -110,45 +111,45 @@ class DataGenerator():
         return self._word_embedding_init
 
 
-    def batch2placeholder(self, batches_context, batches_response, batches_label):
+    def batch2placeholder(self, batches_context, batches_response):
 
         tmp = list(zip(*batches_context))
         example_id_c, turns, turn_num, turn_len = tmp[0], tmp[1], tmp[2], tmp[3]
 
         tmp = list(zip(*batches_response))
-        example_id_r, response, response_len = tmp[0], tmp[1], tmp[2]
+        example_id_r, candidat_id, response, response_len, label = tmp[0], tmp[1], tmp[2], tmp[3], tmp[4]
 
-        tmp = list(zip(*batches_label))
-        example_id_y, label = tmp[0], tmp[1]
-
-        assert example_id_c == example_id_r == example_id_y
+        assert example_id_c == example_id_r
 
         # shuffle respone order in one example
-        response, response_len, label = self.shuffle_response(response, response_len, label)
+        candidat_id, response, response_len, label = self.shuffle_response(candidat_id, response, response_len, label)
 
-        return turns, turn_num, turn_len, response, response_len, label
+        return example_id_c, turns, turn_num, turn_len, candidat_id, response, response_len, label
 
-    def unison_shuffled_copies(self, a, b, c):
-        assert len(a) == len(b) == len(c)
+    def unison_shuffled(self, a, b):
+        assert len(a) == len(b)
         p = np.random.permutation(len(a))
-        return a[p], b[p], c[p], p
+        return a[p], b[p], p
 
-    def shuffle_response(self,response, response_len, label):
+    def unison_shuffled_copies(self, a, b, c, d):
+        assert len(a) == len(b) == len(c) == len(d)
+        p = np.random.permutation(len(a))
+        return a[p], b[p], c[p], d[p], p
+
+    def shuffle_response(self, candidate_id, response, response_len, label):
         """
         responses contain ground truth id
         :param response: (batch_size, options_num, max_turn_len)
         :param response_len: (batch_size, options_num)
-        :param label: (batch_size)
+        :param label: (batch_size, options_num)
         :return:
         """
-        tmp_response = np.zeros_like(response)
-        tmp_response_len = np.zeros_like(response_len)
-        tmp_label = np.zeros_like(label)
+        candidate_id, response, response_len, label = list(candidate_id), list(response), list(response_len), list(label)
         for i in range(len(response)):
-            tmp_response[i], tmp_response_len[i], _, shuffle_id = self.unison_shuffled_copies(np.array(response[i]), np.array(response_len[i]), np.array(response_len[i]))
-            tmp_label[i] = np.argwhere(shuffle_id == label[i])
+            candidate_id[i],response[i], response_len[i], label[i], _ = self.unison_shuffled_copies(
+                candidate_id[i],response[i],response_len[i],label[i])
 
-        return tmp_response, tmp_response_len, tmp_label
+        return candidate_id, response, response_len, label
 
 
     def get_context(self, context):
@@ -187,12 +188,12 @@ class DataGenerator():
                         pad = [0] * (max_turn_len - num)
                         example_turn_len.append(num)
                         tmp += pad
-                    sent_list.append(np.array(tmp))
+                    sent_list.append(np.array(tmp,dtype=np.int32))
                     tmp = []
                     num = 0
 
             # padding zero vector to normalize turn num
-            pad_sent = np.array([0] * max_turn_len)
+            pad_sent = np.array([0] * max_turn_len,dtype=np.int32)
             if len(sent_list) < max_turn_num:
                 example_turn_num = len(sent_list)
                 for i in range(max_turn_num - len(sent_list)):
@@ -203,18 +204,21 @@ class DataGenerator():
                 sent_list = sent_list[-max_turn_num:]
                 example_turn_len = example_turn_len[-max_turn_num:]
 
-            res = np.array([context['example-id'][c], np.array(sent_list), example_turn_num, np.array(example_turn_len)],dtype=object)
+            res = np.array([context['example-id'][c], np.array(sent_list,dtype=np.int32), example_turn_num,
+                            np.array(example_turn_len,dtype=np.int32)],dtype=object)
             saver.append(res)
 
         return np.array(saver)
 
 
-    def get_response(self, response):
+    def get_response(self, response, flag='test'):
         """
 
         :param PATH:
         :return: array of tuple, tuple:(sent, example_response_len)
         """
+
+        assert flag in ['test','train','dev']
 
         max_respone_len = self.configs['max_turn_len']
         options_num = self.configs['options_num']
@@ -222,6 +226,9 @@ class DataGenerator():
 
         for e in range(int(response.shape[0] / options_num)):
             example_data  = response[e*options_num:(e+1)*options_num]
+
+            assert len(set(example_data['example-id'])) == 1
+
             example_data = example_data.reset_index(drop=True)
             example_sent = []
             example_response_len = []
@@ -239,20 +246,19 @@ class DataGenerator():
                     pad = [0] * (max_respone_len - len(options_sent))
                     options_sent += pad
 
-                example_sent.append(np.array(options_sent))
+                example_sent.append(np.array(options_sent,dtype=np.int32))
                 example_response_len.append(options_response_len)
 
-            res = np.array([response['example-id'][e*options_num], np.array(example_sent), np.array(example_response_len)],dtype=object)
-            saver.append(res)
-
-        return np.array(saver)
-
-    def get_label(self, data):
-
-        options_num = self.configs['options_num']
-        saver = []
-        for e in range(int(data.shape[0] / options_num)):
-            res = np.array([data['example-id'][e*options_num], 0],dtype=object)
+            if flag == 'test':
+                res = np.array([response['example-id'][e * options_num], np.array(example_data['candidate-id']),
+                                np.array(example_sent,dtype=np.int32), np.array(example_response_len,dtype=np.int32),
+                                np.array([None] * len(example_data))],
+                               dtype=object)
+            else:
+                res = np.array([response['example-id'][e * options_num], np.array(example_data['candidate-id']),
+                                np.array(example_sent,dtype=np.int32), np.array(example_response_len,dtype=np.int32),
+                                np.array(example_data['y'])],
+                               dtype=object)
             saver.append(res)
 
         return np.array(saver)
@@ -261,67 +267,64 @@ class DataGenerator():
 
         if os.path.exists(self.configs['process_train_data']) and os.path.getsize(self.configs['process_train_data']) > 0:
             with open(self.configs['process_train_data'],'rb') as f:
-                train_context, train_response, train_label = pickle.load(f)
+                train_context, train_response = pickle.load(f)
         else:
-            with open(self.configs['train_context'], 'rb') as f:
+            with open(self.configs['train_context_path'], 'rb') as f:
                 context  = pickle.load(f)
 
-            with open(self.configs['train_response'], 'rb') as f:
+            with open(self.configs['train_response_path'], 'rb') as f:
                 response  = pickle.load(f)
 
             train_context = self.get_context(context)
-            train_response = self.get_response(response)
-            train_label = self.get_label(response)
+            train_response = self.get_response(response,'train')
 
             with open(self.configs['process_train_data'], 'wb') as f:
-                pickle.dump((train_context, train_response, train_label), f)
+                pickle.dump((train_context, train_response), f)
 
 
-        return train_context, train_response, train_label
+        return train_context, train_response
 
     def load_dev_data(self):
 
         if os.path.exists(self.configs['process_dev_data']) and os.path.getsize(self.configs['process_dev_data']) > 0:
             with open(self.configs['process_dev_data'],'rb') as f:
-                dev_context, dev_response, dev_label = pickle.load(f)
+                dev_context, dev_response = pickle.load(f)
         else:
 
-            with open(self.configs['dev_context'], 'rb') as f:
+            with open(self.configs['dev_context_path'], 'rb') as f:
                 context  = pickle.load(f)
 
-            with open(self.configs['dev_response'], 'rb') as f:
+            with open(self.configs['dev_response_path'], 'rb') as f:
                 response  = pickle.load(f)
 
             dev_context = self.get_context(context)
-            dev_response = self.get_response(response)
-            dev_label = self.get_label(response)
+            dev_response = self.get_response(response,'dev')
 
             with open(self.configs['process_dev_data'], 'wb') as f:
-                pickle.dump((dev_context, dev_response, dev_label), f)
+                pickle.dump((dev_context, dev_response), f)
 
 
-        return dev_context, dev_response, dev_label
+        return dev_context, dev_response
 
     def load_test_data(self):
 
         if os.path.exists(self.configs['process_test_data']) and os.path.getsize(self.configs['process_test_data']) > 0:
             with open(self.configs['process_test_data'],'rb') as f:
-                test_context, test_response, test_label = pickle.load(f)
+                test_context, test_response = pickle.load(f)
         else:
 
-            with open(self.configs['test_context'], 'rb') as f:
+            with open(self.configs['test_context_path'], 'rb') as f:
                 context  = pickle.load(f)
 
-            with open(self.configs['test_response'], 'rb') as f:
+            with open(self.configs['test_response_path'], 'rb') as f:
                 response  = pickle.load(f)
 
             test_context = self.get_context(context)
             test_response = self.get_response(response)
-            test_label = self.get_label(response)
 
             with open(self.configs['process_test_data'], 'wb') as f:
-                pickle.dump((test_context, test_response, test_label), f)
+                pickle.dump((test_context, test_response), f)
 
 
-        return test_context, test_response, test_label
+        return test_context, test_response
 

@@ -49,7 +49,7 @@ class Net(object):
 
             self.label = tf.placeholder(
                 tf.int32,
-                shape=[self._conf['batch_size']])
+                shape=[self._conf['batch_size'],self._conf['options_num']])
 
             self.table = tf.placeholder(
                 tf.float32,
@@ -87,8 +87,8 @@ class Net(object):
             # for v in tv:
             #     if v.name.startswith('w_CNN') and v.name.find('bias') == -1:
             #         regularization_cost += tf.nn.l2_loss(v)
-            self.de_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.de_logits,
-                                                                                         labels=self.label),
+            self.de_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.de_logits,
+                                                                                     labels=self.label),
                                           name='de_loss') +  self._conf['reg_rate'] * regularization_cost
 
             self.opt = tf.train.AdamOptimizer(self._conf['learning_rate']).minimize(self.de_loss)

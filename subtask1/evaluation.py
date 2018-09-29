@@ -21,10 +21,10 @@ def evaluate(file_path):
         for line in file:
             line = line.strip()
             tokens = line.split("\t")
-            if len(tokens) != 2:
+            if len(tokens) != 4:
                 continue
 
-            data.append((float(tokens[0]), int(tokens[1])))
+            data.append([float(tokens[2]), int(tokens[3])])
 
     p_at_1_in_100 = 0.0
     p_at_2_in_100 = 0.0

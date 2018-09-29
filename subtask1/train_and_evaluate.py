@@ -4,8 +4,8 @@ import time
 import tensorflow as tf
 import numpy as np
 
-import utils.evaluation as eva
-from utils.data_generator import DataGenerator
+import subtask1.evaluation as eva
+from subtask1.data_generator import DataGenerator
 
 
 def train(conf, _model):
@@ -54,14 +54,14 @@ def train(conf, _model):
 
         for step_i in range(conf["num_scan_data"]):
             for batch_index in range(train_batch_num):
-                turns, turn_num, turn_len, response, response_len, label = dg.train_data_generator(batch_index)
+                data = dg.train_data_generator(batch_index)
                 feed = {
-                    _model.turns: turns,
-                    _model.turn_num: turn_num,
-                    _model.turn_len: turn_len,
-                    _model.response: response,
-                    _model.response_len: response_len,
-                    _model.label: label,
+                    _model.turns: data['turns'],
+                    _model.turn_num: data['turn_num'],
+                    _model.turn_len: data['turn_len'],
+                    _model.response: data['response'],
+                    _model.response_len: data['response_len'],
+                    _model.label: data['label'],
                     _model.keep_rate:conf['drop_rate'],
                     _model.is_training:True
                 }
@@ -89,15 +89,14 @@ def train(conf, _model):
 
                     # caculate dev score
                     for batch_index in range(val_batch_num):
-                        turns, turn_num, turn_len, response, response_len, label = dg.dev_data_generator(
-                            batch_index)
+                        data = dg.dev_data_generator(batch_index)
                         feed = {
-                            _model.turns: turns,
-                            _model.turn_num: turn_num,
-                            _model.turn_len: turn_len,
-                            _model.response: response,
-                            _model.response_len: response_len,
-                            _model.label: label,
+                            _model.turns: data['turns'],
+                            _model.turn_num: data['turn_num'],
+                            _model.turn_len: data['turn_len'],
+                            _model.response: data['response'],
+                            _model.response_len: data['response_len'],
+                            _model.label: data['label'],
                             _model.keep_rate: 1.0,
                             _model.is_training:False
                         }
@@ -106,13 +105,11 @@ def train(conf, _model):
 
                         for i in range(conf["batch_size"]):
                             for j in range(conf['options_num']):
-                                if j == label[i]:
-                                    lab = 1
-                                else:
-                                    lab = 0
                                 dev_score_file.write(
+                                    str(data['example_id'][i]) + '\t' +
+                                    str(data['candidate_id'][i][j]) + '\t' +
                                     str(scores[i][j]) + '\t' +
-                                    str(lab) + '\n')
+                                    str(data['label'][i][j]) + '\n')
                     dev_score_file.close()
 
                     #write evaluation result

@@ -6,6 +6,9 @@ import subtask1.net as net
 import subtask1.test_and_evaluate as test
 
 # configure
+raw_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/subtask4/'
+model_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/model_data/ubuntu/s4/'
+model_path = '/hdd/lujunyu/model/DSTC7/ubuntu/s4/'
 
 ubuntu_conf = {
     'train_context':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s1/train_ubuntu_1_context.pkl',
@@ -18,10 +21,9 @@ ubuntu_conf = {
     'process_train_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s1/DE_process_train.pkl',
     'process_dev_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s1/DE_process_dev.pkl',
     'process_test_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s1/catch_test/DE_process_test.pkl',
-    # 'process_test_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s1/catch_test/DE_process_test.pkl',
 
     "word_emb_init": "/hdd/lujunyu/dataset/DSTC7_track1/DAM/s1/embed4data.pkl",
-    "save_path":'/home/lujunyu/repository/DSTC7/official-baseline/output/CNN/best_f_3/',
+    "save_path":'/home/lujunyu/repository/DSTC7/official-baseline/output/CNN/best_f_3/test/',
 
 
     "init_model": '/home/lujunyu/repository/DSTC7/official-baseline/output/CNN/best_f_3/', #should be set for test
