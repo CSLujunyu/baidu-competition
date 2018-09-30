@@ -9,8 +9,8 @@ import subtask1.test_and_evaluate as test
 
 # configure
 raw_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/subtask1/'
-model_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/model_data/ubuntu/s1/'
-model_path = '/hdd/lujunyu/model/DSTC7/ubuntu/s1/'
+model_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/model_data/Ubuntu/s1/'
+model_path = '/hdd/lujunyu/model/DSTC7/Ubuntu/s1/'
 
 ubuntu_conf = {
     "train_context_path":os.path.join(model_data_path,'train_context.pkl'),

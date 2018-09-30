@@ -29,26 +29,30 @@ def convert_sample(sample):
     return converted_sample
 
 def main():
-    file_name = '/hdd/lujunyu/model/DSTC7/ubuntu/s1/model_1/test_score.txt'
-    save_path = '/hdd/lujunyu/model/DSTC7/ubuntu/s1/model_1/Ubuntu_subtask_1.json'
-    with open(file_name, 'r') as fin:
-        raw_result = csv.reader(fin, delimiter='\t')
-        converted_result = []
-        sample = []
-        sample_id = None
-        for row in raw_result:
-            if sample_id is None or sample_id != row[0]:
+    model_id = [1]
+    dataset = ['Ubuntu','Advising']
+    for i in model_id:
+        for d in dataset:
+            file_name = '/hdd/lujunyu/model/DSTC7/'+str(d)+'/s1/model_'+str(i)+'/test_score.txt'
+            save_path = '/hdd/lujunyu/model/DSTC7/'+str(d)+'/s1/model_'+str(i)+'/'+str(d)+'_subtask_1.json'
+            with open(file_name, 'r') as fin:
+                raw_result = csv.reader(fin, delimiter='\t')
+                converted_result = []
+                sample = []
+                sample_id = None
+                for row in raw_result:
+                    if sample_id is None or sample_id != row[0]:
+                        if sample:
+                            converted_result.append(convert_sample(sample))
+                        sample_id = row[0]
+                        sample = []
+                    row[2] = float(row[2])
+                    sample.append(row[:3])
                 if sample:
                     converted_result.append(convert_sample(sample))
-                sample_id = row[0]
-                sample = []
-            row[2] = float(row[2])
-            sample.append(row[:3])
-        if sample:
-            converted_result.append(convert_sample(sample))
-    with open(save_path, "w") as f:
-        f.write(json.dumps(converted_result, indent=4))
-        print("Finished...")
+            with open(save_path, "w") as f:
+                f.write(json.dumps(converted_result, indent=4))
+                print("Finished testing "+str(d)+" model %d"%i)
 
 if __name__ == "__main__":
     main()
