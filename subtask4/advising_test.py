@@ -1,19 +1,16 @@
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-import sys
-sys.path.append('/home/lujunyu/repository/DSTC7/official-baseline/')
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 import subtask4.net as net
-import subtask4.train_and_evaluate as train
-
+import subtask4.test_and_evaluate as test
 
 # configure
 raw_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/subtask4/'
 model_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/model_data/Advising/s4/'
 model_path = '/hdd/lujunyu/model/DSTC7/Advising/s4/'
 
-advising_conf = {
+ubuntu_conf = {
     "train_context_path":os.path.join(model_data_path,'train_context.pkl'),
     "dev_context_path":os.path.join(model_data_path,'dev_context.pkl'),
     "test_context_path":os.path.join(model_data_path,'test_context.pkl'),
@@ -29,9 +26,9 @@ advising_conf = {
     "word_emb_init": os.path.join(model_data_path,'embed4data.pkl'),
 
 
-    "init_model": None, #should be set for test
+    "init_model": os.path.join(model_path,'model_1/'), #should be set for test
 
-    "rand_seed": 2,
+    "rand_seed": None,
     "is_mask": True,
     "is_layer_norm": True,
     "is_positional": False,
@@ -40,8 +37,8 @@ advising_conf = {
     "attention_type": "dot",
 
     "learning_rate": 1e-3,
-    "reg_rate":3e-5,
-    "drop_rate": 0.3,
+    "reg_rate":1e-5,
+    "drop_rate":0.5,
     "vocab_size": 5580,    #434513 for DAM  ， 128205 for dstc
     "emb_size": 300,
     "batch_size": 10, #200 for test
@@ -57,7 +54,6 @@ advising_conf = {
     "rnn_dim":300,
     'options_num':100,
     'conv_filter_num':50,
-
     'n_layers':3,
     'cnn_channel':[12,24,48],
     'kernel_size':[
@@ -72,10 +68,10 @@ advising_conf = {
 }
 
 
-model = net.Net(advising_conf)
-train.train(advising_conf, model)
+model = net.Net(ubuntu_conf)
+# train.train(ubuntu_conf, model)
 
 
 #test and evaluation, init_model in conf should be set
-#test.test(conf, model)
+test.test(ubuntu_conf, model)
 

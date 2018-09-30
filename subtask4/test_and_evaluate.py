@@ -1,18 +1,16 @@
+import sys
 import os
 import time
 
+import pickle
 import tensorflow as tf
 import numpy as np
 
-import subtask2.evaluation as eva
-from subtask2.data_generator import DataGenerator
-from subtask2.operations import sort
+import subtask4.evaluation as eva
+from subtask4.data_generator import DataGenerator
 
 
-def train(conf, _model):
-    
-    if conf['rand_seed'] is not None:
-        np.random.seed(conf['rand_seed'])
+def test(conf, _model):
 
     if not os.path.exists(conf['save_path']):
         os.makedirs(conf['save_path'])
@@ -22,85 +20,55 @@ def train(conf, _model):
 
     # Data Generate
     dg = DataGenerator(conf)
-    print('Dev data size: ', dg.dev_data_size)
     print('Test data size: ', dg.test_data_size)
-    print('Response pool size: ', dg.response_pool_size)
 
     # refine conf
-    val_batch_num = int(dg.dev_data_size / conf["batch_size"])
+    test_batch_num = int(dg.test_data_size / conf["batch_size"])
 
-    print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())),' : Build graph')
+    print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Build graph')
     _graph = _model.build_graph()
-    print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())), ' : Build graph sucess')
+    print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), ' : Build graph sucess')
 
-
-    with tf.Session(graph=_graph) as sess:
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    with tf.Session(graph=_graph, config=config) as sess:
         init = tf.global_variables_initializer()
-        sess.run(init,feed_dict={_model.table:dg.table})
+        sess.run(init, feed_dict={_model.table: dg.table})
         if conf["init_model"]:
             model_path = tf.train.latest_checkpoint(conf["init_model"])
             _model.saver.restore(sess, model_path)
-            print("sucess init %s" %conf["init_model"])
+            print("sucess init %s" % conf["init_model"])
 
-        average_loss = 0.0
-        batch_index = 0
-        step = 0
-        best_result = [0, 0, 0, 0, 0, 0, 0]
-
-        dev_score_file_path = conf['save_path'] + 'score'
-        dev_score_file = open(dev_score_file_path, 'w')
-        # caculate dev score
-        for batch_index in range(val_batch_num):
-            data = dg.dev_data_generator(batch_index)
+        test_score_file_path = conf['save_path'] + 'test_score.txt'
+        test_score_file = open(test_score_file_path, 'w')
+        # caculate test score
+        for batch_index in range(test_batch_num):
+            print(batch_index)
+            test_data = dg.test_data_generator(batch_index)
             feed = {
-                _model.turns: data['turns'],
-                _model.turn_num: data['turn_num'],
-                _model.turn_len: data['turn_len'],
-                _model.label: data['y'],
-                _model.keep_rate: 1.0,
-                _model.is_training: False
+                _model.turns: test_data['turns'],
+                _model.turn_num: test_data['turn_num'],
+                _model.turn_len: test_data['turn_len'],
+                _model.response: test_data['response'],
+                _model.response_len: test_data['response_len'],
+                _model.keep_rate: 1.0
             }
 
-            r_score = []
-            r_label = []
-            print(time.strftime(' %Y-%m-%d %H:%M:%S', time.localtime(time.time())), '  Evaluate batch %d'%batch_index)
-            for batch_option_id in range(conf['options_batch_num']):
-                response_data = dg.response_pool_generator(batch_option_id)
-
-                feed.update({_model.response:np.tile(response_data['response'],(conf['batch_size'],1,1)),
-                             _model.response_len:np.tile(response_data['response_len'],(conf['batch_size'],1))})
-                curr_logits = sess.run( _model.de_logits, feed_dict = feed)
-                r_score.append(curr_logits)
-                r_label.append(response_data['candidate_id'])
-
-            ## r_score.shape = (batch_size, 120000)
-            r_score = np.concatenate(r_score, axis=1)
-            ## r_label.shape = (120000)
-            r_label = np.concatenate(r_label, axis=0)
+            scores= sess.run(_model.de_logits,feed_dict=feed)
 
             for i in range(conf["batch_size"]):
-                scores = sort(zip(r_score[i, :], r_label))
                 for j in range(conf['options_num']):
-                    dev_score_file.write(
-                        str(data['example_id'][i]) + '\t' +
-                        str(scores[j][1]) + '\t' +
-                        str(scores[j][0]) + '\t' +
-                        str(data['label'][i]) + '\n')
+                    test_score_file.write(
+                        str(test_data['example_id'][i]) + '\t' +
+                        str(test_data['candidate_id'][i][j]) + '\t' +
+                        str(scores[i][j]) +'\n')
+        test_score_file.close()
 
-        dev_score_file.close()
-
-        #write evaluation result
-        dev_result = eva.evaluate(dev_score_file_path)
-        dev_result_file_path = conf["save_path"] + "result"
-        with open(dev_result_file_path, 'w') as out_file:
-            for p_at in dev_result:
-                out_file.write(str(p_at) + '\n')
-        print('finish dev evaluation')
-        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-
-        if dev_result[-1]> best_result[-1]:
-            best_result = dev_result
-            print('best result: ',best_result)
-                    
-                
-
+        # write evaluation result
+        # test_result = eva.evaluate(test_score_file_path)
+        # test_result_file_path = conf["save_path"] + "test_result.txt"
+        # with open(test_result_file_path, 'w') as out_file:
+        #     for p_at in test_result:
+        #         out_file.write(str(p_at) + '\n')
+        # print('finish test evaluation')
+        # print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
