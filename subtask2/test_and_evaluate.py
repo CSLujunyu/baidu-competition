@@ -4,12 +4,12 @@ import time
 import tensorflow as tf
 import numpy as np
 
-import subtask2.evaluation as eva
+import subtask2.test_evaluation as eva
 from subtask2.data_generator import DataGenerator
 from subtask2.operations import sort
 
 
-def train(conf, _model):
+def test(conf, _model):
     
     if conf['rand_seed'] is not None:
         np.random.seed(conf['rand_seed'])

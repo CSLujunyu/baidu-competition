@@ -1,36 +1,33 @@
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+import sys
+sys.path.append('/home/lujunyu/repository/DSTC7/official-baseline/')
 
 import subtask2.net as net
 import subtask2.train_and_evaluate as train
 import subtask2.test_and_evaluate as test
 
 # configure
+raw_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/subtask2/'
+model_data_path = '/hdd/lujunyu/dataset/DSTC7_track1/model_data/ubuntu/s2/'
+model_path = '/hdd/lujunyu/model/DSTC7/ubuntu/s2/'
 
 ubuntu_conf = {
-    # 'train_context':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/train_ubuntu_2_context.pkl',
-    # 'dev_context': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/dev_ubuntu_2_context.pkl',
-    # 'test_context':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/test_ubuntu_2_context.pkl',
-    # 'response_pool':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/response_pool.pkl',
-    #
-    # 'process_train_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/DE_process_train.pkl',
-    # 'process_dev_data':'/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/DE_process_dev.pkl',
-    # 'process_test_data': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/DE_process_test.pkl',
-    # 'process_pool': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/DE_process_pool.pkl',
+    "train_context_path": os.path.join(model_data_path, 'train_context.pkl'),
+    "dev_context_path": os.path.join(model_data_path, 'dev_context.pkl'),
+    "test_context_path": os.path.join(model_data_path, 'test_context.pkl'),
+    "train_response_path": os.path.join(model_data_path, 'train_response.pkl'),
+    "dev_response_path": os.path.join(model_data_path, 'dev_response.pkl'),
+    "response_pool":os.path.join(model_data_path,'response_pool.pkl'),
 
-    'train_context': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_train_context.pkl',
-    'dev_context': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_dev_context.pkl',
-    'test_context': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_test_context.pkl',
-    'response_pool': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/response_pool.pkl',
+    'process_train_data': os.path.join(model_data_path,'DE_process_train.pkl'),
+    'process_dev_data': os.path.join(model_data_path,'DE_process_dev.pkl'),
+    'process_test_data': os.path.join(model_data_path,'DE_process_test.pkl'),
+    'process_pool': os.path.join(model_data_path,'DE_process_pool.pkl'),
 
-    'process_train_data': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_DE_process_train.pkl',
-    'process_dev_data': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_DE_process_dev.pkl',
-    'process_test_data': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_DE_process_test.pkl',
-    'process_pool': '/hdd/lujunyu/dataset/DSTC7_track1/DAM/s2/small_DE_process_pool.pkl',
-
-    "save_path": "./output/CNN/stack/",
-    "word_emb_init": "/hdd/lujunyu/dataset/DSTC7_track1/DAM/s4/15_60/embed4data.pkl",
+    "save_path": os.path.join(model_path,'model_1/'),
+    "word_emb_init": os.path.join(model_data_path,'embed4data.pkl'),
 
 
     "init_model": None, #should be set for test
@@ -46,7 +43,7 @@ ubuntu_conf = {
     "learning_rate": 1e-3,
     "reg_rate":3e-5,
     "drop_rate": 0.3,
-    "vocab_size": 111518,    #434513 for DAM  ， 128205 for dstc
+    "vocab_size": 61003,    #434513 for DAM  ， 128205 for dstc
     "emb_size": 300,
     "batch_size": 10, #200 for test
 
@@ -55,12 +52,11 @@ ubuntu_conf = {
 
     "max_to_keep": 1,
     "num_scan_data": 5,
-    "_EOS_": 38, #1455 for DSTC7, 28270 for DAM_source, #1 for douban data  , 6 for advising
+    "_EOS_": 1, #1455 for DSTC7, 28270 for DAM_source, #1 for douban data  , 6 for advising
     "final_n_class": 1,
 
     "rnn_dim":300,
     'options_num':100,
-    'options_batch_num':1200,
     'conv_filter_num':50,
 
     'n_layers':3,

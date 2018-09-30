@@ -42,8 +42,8 @@ class Net(object):
                 shape=[self._conf['batch_size'], self._conf['options_num']])
 
             self.label = tf.placeholder(
-                tf.int32,
-                shape=[self._conf['batch_size']])
+                tf.float32,
+                shape=[self._conf['batch_size'], self._conf['options_num']])
 
             self.table = tf.placeholder(
                 tf.float32,

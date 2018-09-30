@@ -4,8 +4,8 @@ import time
 import tensorflow as tf
 import numpy as np
 
-import subtask4.evaluation as eva
-from subtask4.data_generator import DataGenerator
+import subtask2.train_evaluation as eva
+from subtask2.data_generator import DataGenerator
 
 
 def train(conf, _model):
@@ -24,6 +24,7 @@ def train(conf, _model):
     print('Train data size: ', dg.train_data_size)
     print('Dev data size: ', dg.dev_data_size)
     print('Test data size: ', dg.test_data_size)
+    print('Candidate pool size: ', dg.response_pool_size)
 
     # refine conf
     train_batch_num = int(dg.train_data_size / conf["batch_size"])
@@ -89,7 +90,7 @@ def train(conf, _model):
 
                     # caculate dev score
                     for batch_index in range(val_batch_num):
-                        data = dg.dev_data_generator(batch_index)
+                        data = dg.dev_data_generator_train(batch_index)
                         feed = {
                             _model.turns: data['turns'],
                             _model.turn_num: data['turn_num'],

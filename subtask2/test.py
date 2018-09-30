@@ -2,8 +2,8 @@ import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
-import subtask1.net as net
-import subtask1.test_and_evaluate as test
+import subtask2.net as net
+import subtask2.test_and_evaluate as test
 
 # configure
 
@@ -51,6 +51,7 @@ ubuntu_conf = {
 
     "rnn_dim":300,
     'options_num':100,
+    'options_batch_num': 1200,
     'conv_filter_num':50,
     'n_layers':3,
     'cnn_channel':[12,24,48],
