@@ -44,25 +44,24 @@ def test(conf, _model):
         # caculate test score
         for batch_index in range(test_batch_num):
             print(batch_index)
-            test_data = dg.test_data_generator(
-                batch_index)
+            test_data = dg.test_data_generator(batch_index)
             feed = {
-                _model.turns: turns,
-                _model.turn_num: turn_num,
-                _model.turn_len: turn_len,
-                _model.response: response,
-                _model.response_len: response_len,
-                _model.label: label,
+                _model.turns: test_data['turns'],
+                _model.turn_num: test_data['turn_num'],
+                _model.turn_len: test_data['turn_len'],
+                _model.response: test_data['response'],
+                _model.response_len: test_data['response_len'],
                 _model.keep_rate: 1.0
             }
 
-            scores, check, keep = sess.run([_model.de_logits, _model.check, _model.keep_rate],
-                                           feed_dict=feed)
+            scores= sess.run(_model.de_logits,feed_dict=feed)
 
             for i in range(conf["batch_size"]):
                 for j in range(conf['options_num']):
                     test_score_file.write(
-                        str(scores[i][j]) + '\t')
+                        str(test_data['example_id'][i]) + '\t' +
+                        str(test_data['candidate_id'][i][j]) + '\t' +
+                        str(scores[i][j]) +'\n')
         test_score_file.close()
 
         # write evaluation result

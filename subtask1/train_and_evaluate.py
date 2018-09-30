@@ -101,7 +101,7 @@ def train(conf, _model):
                             _model.is_training:False
                         }
 
-                        scores, check, keep = sess.run([_model.de_logits, _model.check, _model.keep_rate], feed_dict = feed)
+                        scores = sess.run(_model.de_logits, feed_dict = feed)
 
                         for i in range(conf["batch_size"]):
                             for j in range(conf['options_num']):
