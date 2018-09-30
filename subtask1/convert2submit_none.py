@@ -29,7 +29,8 @@ def convert_sample(sample):
     return converted_sample
 
 def main():
-    file_name = '/hdd/lujunyu/model/DSTC7/advising/s1/model_1/test_score.txt'
+    file_name = '/hdd/lujunyu/model/DSTC7/ubuntu/s1/model_1/test_score.txt'
+    save_path = '/hdd/lujunyu/model/DSTC7/ubuntu/s1/model_1/Ubuntu_subtask_1.json'
     with open(file_name, 'r') as fin:
         raw_result = csv.reader(fin, delimiter='\t')
         converted_result = []
@@ -45,7 +46,9 @@ def main():
             sample.append(row[:3])
         if sample:
             converted_result.append(convert_sample(sample))
-        print(json.dumps(converted_result, indent=4))
+    with open(save_path, "w") as f:
+        f.write(json.dumps(converted_result, indent=4))
+        print("Finished...")
 
 if __name__ == "__main__":
     main()
